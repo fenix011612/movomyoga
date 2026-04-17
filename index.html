@@ -1,4 +1,4 @@
-
+```html
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -16,7 +16,6 @@ body {
     height: 100vh;
 }
 
-/* CARD */
 .card {
     background: white;
     padding: 25px;
@@ -26,11 +25,9 @@ body {
     text-align: center;
 }
 
-/* TÍTULOS */
 .titulo {
     font-size: 22px;
     font-weight: bold;
-    margin-bottom: 5px;
 }
 
 .sub {
@@ -38,7 +35,6 @@ body {
     margin-bottom: 15px;
 }
 
-/* INPUT */
 input, select {
     width: 100%;
     padding: 12px;
@@ -47,7 +43,6 @@ input, select {
     margin-bottom: 10px;
 }
 
-/* BOTÃO */
 button {
     width: 100%;
     padding: 12px;
@@ -59,15 +54,9 @@ button {
     cursor: pointer;
 }
 
-button:hover {
-    opacity: 0.9;
-}
-
-/* ADMIN */
 .admin {
     margin-top: 15px;
     font-size: 12px;
-    color: #999;
 }
 </style>
 </head>
@@ -76,10 +65,8 @@ button:hover {
 
 <div class="card">
 
-    <div id="aulaInfo">
-        <div class="titulo" id="nomeAula">Carregando...</div>
-        <div class="sub" id="profAula"></div>
-    </div>
+    <div class="titulo" id="nomeAula">Carregando...</div>
+    <div class="sub" id="profAula"></div>
 
     <input type="text" id="nome" placeholder="Digite seu nome">
 
@@ -101,8 +88,25 @@ button:hover {
 
 </div>
 
-<script>
-// ===== SUA GRADE =====
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+// CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyAatjvibYj9oB0rLzgL-iQINqZmee-leHA",
+  authDomain: "movomyoga.firebaseapp.com",
+  databaseURL: "https://movomyoga-default-rtdb.firebaseio.com",
+  projectId: "movomyoga",
+  storageBucket: "movomyoga.firebasestorage.app",
+  messagingSenderId: "554585738197",
+  appId: "1:554585738197:web:e568518ec311c69792cb5c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ===== GRADE =====
 const grade = {
     1: [
         {hora: "09:30", aula: "Yoga Integrativa", prof: "Jorginho"},
@@ -139,7 +143,7 @@ const grade = {
 function getAulaAtual() {
     const now = new Date();
     const dia = now.getDay();
-    const horaAtual = now.getHours() * 60 + now.getMinutes();
+    const horaAtual = now.getHours()*60 + now.getMinutes();
 
     let aulasHoje = grade[dia] || [];
 
@@ -154,7 +158,7 @@ function getAulaAtual() {
     return null;
 }
 
-// ===== MOSTRAR NA TELA =====
+// ===== MOSTRAR =====
 function mostrarAula() {
     let aula = getAulaAtual();
 
@@ -164,41 +168,35 @@ function mostrarAula() {
             "Prof: " + aula.prof + " • " + aula.hora;
     } else {
         document.getElementById("nomeAula").innerText = "Nenhuma aula agora";
-        document.getElementById("profAula").innerText = "";
     }
 }
-
 mostrarAula();
 
-// ===== CHECK-IN =====
-function checkin() {
+// ===== CHECK-IN FIREBASE =====
+window.checkin = function() {
     let nome = document.getElementById("nome").value;
     let plano = document.getElementById("plano").value;
     let aula = getAulaAtual();
 
     if (!nome || !aula) {
-        alert("Preencha seu nome ou aguarde o horário da aula!");
+        alert("Preencha seu nome ou aguarde o horário!");
         return;
     }
 
-    let registros = JSON.parse(localStorage.getItem("dados") || "[]");
-
-    registros.push({
-        nome,
-        plano,
+    push(ref(db, "checkins"), {
+        nome: nome,
+        plano: plano,
         valor: plano === "mensal" ? 0 : parseFloat(plano),
         prof: aula.prof,
         data: new Date().toLocaleString()
     });
 
-    localStorage.setItem("dados", JSON.stringify(registros));
-
-    document.getElementById("msg").innerText = "✅ Presença confirmada!";
+    document.getElementById("msg").innerText = "✅ Check-in realizado!";
     document.getElementById("nome").value = "";
 }
 
-// ===== RELATÓRIO ADMIN =====
-function verAdmin() {
+// ===== RELATÓRIO EM TEMPO REAL =====
+window.verAdmin = function() {
     let senha = document.getElementById("senha").value;
 
     if (senha !== "1234") {
@@ -206,36 +204,36 @@ function verAdmin() {
         return;
     }
 
-    let registros = JSON.parse(localStorage.getItem("dados") || "[]");
+    onValue(ref(db, "checkins"), snapshot => {
+        let dados = snapshot.val();
+        let total = 0;
+        let professores = {};
 
-    let total = 0;
-    let professores = {};
+        for (let id in dados) {
+            let r = dados[id];
+            total += r.valor;
 
-    registros.forEach(r => {
-        total += r.valor;
+            let lista = r.prof.split("/");
+            let valorDiv = r.valor / lista.length;
 
-        let listaProf = r.prof.split("/");
-        let valorDividido = r.valor / listaProf.length;
+            lista.forEach(p => {
+                p = p.trim();
+                if (!professores[p]) professores[p] = 0;
+                professores[p] += valorDiv;
+            });
+        }
 
-        listaProf.forEach(p => {
-            p = p.trim();
+        let texto = `💰 <b>Total:</b> R$ ${total.toFixed(2)}<br><br>`;
 
-            if (!professores[p]) professores[p] = 0;
-            professores[p] += valorDividido;
-        });
+        for (let p in professores) {
+            texto += `👤 ${p}: R$ ${professores[p].toFixed(2)}<br>`;
+        }
+
+        document.getElementById("relatorio").innerHTML = texto;
     });
-
-    let texto = `💰 <b>Total geral:</b> R$ ${total.toFixed(2)}<br><br>`;
-    texto += `👩‍🏫 <b>Faturamento por professor:</b><br><br>`;
-
-    for (let p in professores) {
-        texto += `• ${p}: R$ ${professores[p].toFixed(2)}<br>`;
-    }
-
-    document.getElementById("relatorio").innerHTML = texto;
 }
 </script>
 
 </body>
 </html>
-
+```
