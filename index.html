@@ -1,53 +1,87 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
 <title>Check-in Yoga</title>
+
 <style>
 body {
-    font-family: Arial;
-    background: linear-gradient(135deg, #c8a2ff, #00d4ff);
-    color: #333;
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #b57cff, #00e0ff);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* CARD */
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    width: 320px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     text-align: center;
 }
 
-.container {
-    background: white;
-    padding: 20px;
-    border-radius: 15px;
-    width: 300px;
-    margin: 50px auto;
+/* TÍTULOS */
+.titulo {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 5px;
 }
 
+.sub {
+    color: #666;
+    margin-bottom: 15px;
+}
+
+/* INPUT */
+input, select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+}
+
+/* BOTÃO */
 button {
-    background: #6a0dad;
-    color: white;
+    width: 100%;
+    padding: 12px;
     border: none;
-    padding: 10px;
-    border-radius: 8px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #7b2cff, #00cfff);
+    color: white;
+    font-weight: bold;
     cursor: pointer;
 }
 
-input, select {
-    width: 90%;
-    padding: 8px;
-    margin: 5px;
+button:hover {
+    opacity: 0.9;
 }
 
+/* ADMIN */
 .admin {
-    margin-top: 20px;
+    margin-top: 15px;
+    font-size: 12px;
+    color: #999;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container" id="checkin">
-    <h2>Check-in Yoga</h2>
+<div class="card">
 
-    <p id="aula"></p>
+    <div id="aulaInfo">
+        <div class="titulo" id="nomeAula">Carregando...</div>
+        <div class="sub" id="profAula"></div>
+    </div>
 
-    <input type="text" id="nome" placeholder="Seu nome">
+    <input type="text" id="nome" placeholder="Digite seu nome">
 
     <select id="plano">
         <option value="7.38">TotalPass</option>
@@ -58,19 +92,19 @@ input, select {
     <button onclick="checkin()">Confirmar presença</button>
 
     <p id="msg"></p>
-</div>
 
-<div class="container admin">
-    <h3>Admin</h3>
-    <input type="password" id="senha" placeholder="Senha">
-    <button onclick="verAdmin()">Ver faturamento</button>
-    <p id="relatorio"></p>
+    <div class="admin">
+        <input type="password" id="senha" placeholder="Admin">
+        <button onclick="verAdmin()">Ver relatório</button>
+        <p id="relatorio"></p>
+    </div>
+
 </div>
 
 <script>
-// SUA GRADE (SIMPLIFICADA)
+// ===== SUA GRADE =====
 const grade = {
-    1: [ // segunda
+    1: [
         {hora: "09:30", aula: "Yoga Integrativa", prof: "Jorginho"},
         {hora: "17:20", aula: "Yoga Integrativa", prof: "Felipe"},
         {hora: "18:30", aula: "Yoga Integrativa", prof: "Felipe"}
@@ -82,23 +116,26 @@ const grade = {
     ],
     3: [
         {hora: "08:00", aula: "Aéreo Yoga", prof: "Alessandra"},
-        {hora: "09:30", aula: "Yoga Integrativa", prof: "Alessandra"}
+        {hora: "09:30", aula: "Yoga Integrativa", prof: "Alessandra"},
+        {hora: "17:20", aula: "Yoga Integrativa", prof: "Felipe"}
     ],
     4: [
         {hora: "09:30", aula: "Yoga Sutil", prof: "Alessandra"},
-        {hora: "17:20", aula: "Yoga Integrativa", prof: "Jorginho"}
+        {hora: "17:20", aula: "Yoga Integrativa", prof: "Jorginho"},
+        {hora: "18:30", aula: "Yoga Integrativa", prof: "Jorginho"}
     ],
     5: [
         {hora: "08:15", aula: "Aéreo Yoga", prof: "Alessandra"},
-        {hora: "09:30", aula: "Chair Yoga", prof: "Alessandra"}
+        {hora: "09:30", aula: "Chair Yoga", prof: "Alessandra"},
+        {hora: "17:20", aula: "Yoga Integrativa", prof: "Felipe"}
     ],
     6: [
-        {hora: "08:30", aula: "Oficina", prof: "Jorginho/Felipe"},
+        {hora: "08:30", aula: "Oficina de Asanas", prof: "Jorginho/Felipe"},
         {hora: "10:30", aula: "Vinyasa", prof: "Jorginho/Felipe"}
     ]
 };
 
-// pega aula atual
+// ===== DETECTAR AULA =====
 function getAulaAtual() {
     const now = new Date();
     const dia = now.getDay();
@@ -117,27 +154,30 @@ function getAulaAtual() {
     return null;
 }
 
+// ===== MOSTRAR NA TELA =====
 function mostrarAula() {
     let aula = getAulaAtual();
+
     if (aula) {
-        document.getElementById("aula").innerHTML =
-            `Aula: ${aula.aula} <br> Prof: ${aula.prof}`;
+        document.getElementById("nomeAula").innerText = aula.aula;
+        document.getElementById("profAula").innerText =
+            "Prof: " + aula.prof + " • " + aula.hora;
     } else {
-        document.getElementById("aula").innerText =
-            "Nenhuma aula ativa agora";
+        document.getElementById("nomeAula").innerText = "Nenhuma aula agora";
+        document.getElementById("profAula").innerText = "";
     }
 }
 
 mostrarAula();
 
-// salvar check-in
+// ===== CHECK-IN =====
 function checkin() {
     let nome = document.getElementById("nome").value;
     let plano = document.getElementById("plano").value;
     let aula = getAulaAtual();
 
     if (!nome || !aula) {
-        alert("Preencha nome ou fora do horário!");
+        alert("Preencha seu nome ou aguarde o horário da aula!");
         return;
     }
 
@@ -147,20 +187,22 @@ function checkin() {
         nome,
         plano,
         valor: plano === "mensal" ? 0 : parseFloat(plano),
-        prof: aula.prof
+        prof: aula.prof,
+        data: new Date().toLocaleString()
     });
 
     localStorage.setItem("dados", JSON.stringify(registros));
 
-    document.getElementById("msg").innerText = "Check-in realizado!";
+    document.getElementById("msg").innerText = "✅ Presença confirmada!";
+    document.getElementById("nome").value = "";
 }
 
-// ADMIN
+// ===== ADMIN =====
 function verAdmin() {
     let senha = document.getElementById("senha").value;
 
     if (senha !== "1234") {
-        alert("Senha errada");
+        alert("Senha incorreta");
         return;
     }
 
@@ -176,10 +218,10 @@ function verAdmin() {
         professores[r.prof] += r.valor;
     });
 
-    let texto = `Total: R$ ${total.toFixed(2)} <br><br>`;
+    let texto = `💰 Total: R$ ${total.toFixed(2)}<br><br>`;
 
     for (let p in professores) {
-        texto += `${p}: R$ ${professores[p].toFixed(2)} <br>`;
+        texto += `👤 ${p}: R$ ${professores[p].toFixed(2)}<br>`;
     }
 
     document.getElementById("relatorio").innerHTML = texto;
