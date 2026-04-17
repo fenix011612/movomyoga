@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Check-in Yoga</title>
+<style>
+body {
+    font-family: Arial;
+    background: linear-gradient(135deg, #c8a2ff, #00d4ff);
+    color: #333;
+    text-align: center;
+}
+
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    width: 300px;
+    margin: 50px auto;
+}
+
+button {
+    background: #6a0dad;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+input, select {
+    width: 90%;
+    padding: 8px;
+    margin: 5px;
+}
+
+.admin {
+    margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container" id="checkin">
+    <h2>Check-in Yoga</h2>
+
+    <p id="aula"></p>
+
+    <input type="text" id="nome" placeholder="Seu nome">
+
+    <select id="plano">
+        <option value="7.38">TotalPass</option>
+        <option value="7.34">Gympass</option>
+        <option value="mensal">Mensal</option>
+    </select>
+
+    <button onclick="checkin()">Confirmar presença</button>
+
+    <p id="msg"></p>
+</div>
+
+<div class="container admin">
+    <h3>Admin</h3>
+    <input type="password" id="senha" placeholder="Senha">
+    <button onclick="verAdmin()">Ver faturamento</button>
+    <p id="relatorio"></p>
+</div>
+
+<script>
+// SUA GRADE (SIMPLIFICADA)
+const grade = {
+    1: [ // segunda
+        {hora: "09:30", aula: "Yoga Integrativa", prof: "Jorginho"},
+        {hora: "17:20", aula: "Yoga Integrativa", prof: "Felipe"},
+        {hora: "18:30", aula: "Yoga Integrativa", prof: "Felipe"}
+    ],
+    2: [
+        {hora: "07:00", aula: "Yoga Integrativa", prof: "Jorginho"},
+        {hora: "09:30", aula: "Yoga Sutil", prof: "Jorginho"},
+        {hora: "17:00", aula: "Funcional", prof: "Alessandra"}
+    ],
+    3: [
+        {hora: "08:00", aula: "Aéreo Yoga", prof: "Alessandra"},
+        {hora: "09:30", aula: "Yoga Integrativa", prof: "Alessandra"}
+    ],
+    4: [
+        {hora: "09:30", aula: "Yoga Sutil", prof: "Alessandra"},
+        {hora: "17:20", aula: "Yoga Integrativa", prof: "Jorginho"}
+    ],
+    5: [
+        {hora: "08:15", aula: "Aéreo Yoga", prof: "Alessandra"},
+        {hora: "09:30", aula: "Chair Yoga", prof: "Alessandra"}
+    ],
+    6: [
+        {hora: "08:30", aula: "Oficina", prof: "Jorginho/Felipe"},
+        {hora: "10:30", aula: "Vinyasa", prof: "Jorginho/Felipe"}
+    ]
+};
+
+// pega aula atual
+function getAulaAtual() {
+    const now = new Date();
+    const dia = now.getDay();
+    const horaAtual = now.getHours() * 60 + now.getMinutes();
+
+    let aulasHoje = grade[dia] || [];
+
+    for (let a of aulasHoje) {
+        let [h, m] = a.hora.split(":");
+        let horaAula = parseInt(h)*60 + parseInt(m);
+
+        if (horaAtual >= horaAula && horaAtual <= horaAula + 40) {
+            return a;
+        }
+    }
+    return null;
+}
+
+function mostrarAula() {
+    let aula = getAulaAtual();
+    if (aula) {
+        document.getElementById("aula").innerHTML =
+            `Aula: ${aula.aula} <br> Prof: ${aula.prof}`;
+    } else {
+        document.getElementById("aula").innerText =
+            "Nenhuma aula ativa agora";
+    }
+}
+
+mostrarAula();
+
+// salvar check-in
+function checkin() {
+    let nome = document.getElementById("nome").value;
+    let plano = document.getElementById("plano").value;
+    let aula = getAulaAtual();
+
+    if (!nome || !aula) {
+        alert("Preencha nome ou fora do horário!");
+        return;
+    }
+
+    let registros = JSON.parse(localStorage.getItem("dados") || "[]");
+
+    registros.push({
+        nome,
+        plano,
+        valor: plano === "mensal" ? 0 : parseFloat(plano),
+        prof: aula.prof
+    });
+
+    localStorage.setItem("dados", JSON.stringify(registros));
+
+    document.getElementById("msg").innerText = "Check-in realizado!";
+}
+
+// ADMIN
+function verAdmin() {
+    let senha = document.getElementById("senha").value;
+
+    if (senha !== "1234") {
+        alert("Senha errada");
+        return;
+    }
+
+    let registros = JSON.parse(localStorage.getItem("dados") || "[]");
+
+    let total = 0;
+    let professores = {};
+
+    registros.forEach(r => {
+        total += r.valor;
+
+        if (!professores[r.prof]) professores[r.prof] = 0;
+        professores[r.prof] += r.valor;
+    });
+
+    let texto = `Total: R$ ${total.toFixed(2)} <br><br>`;
+
+    for (let p in professores) {
+        texto += `${p}: R$ ${professores[p].toFixed(2)} <br>`;
+    }
+
+    document.getElementById("relatorio").innerHTML = texto;
+}
+</script>
+
+</body>
+</html>
