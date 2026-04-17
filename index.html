@@ -197,7 +197,7 @@ function checkin() {
     document.getElementById("nome").value = "";
 }
 
-// ===== ADMIN =====
+// ===== RELATÓRIO ADMIN =====
 function verAdmin() {
     let senha = document.getElementById("senha").value;
 
@@ -214,14 +214,22 @@ function verAdmin() {
     registros.forEach(r => {
         total += r.valor;
 
-        if (!professores[r.prof]) professores[r.prof] = 0;
-        professores[r.prof] += r.valor;
+        let listaProf = r.prof.split("/");
+        let valorDividido = r.valor / listaProf.length;
+
+        listaProf.forEach(p => {
+            p = p.trim();
+
+            if (!professores[p]) professores[p] = 0;
+            professores[p] += valorDividido;
+        });
     });
 
-    let texto = `💰 Total: R$ ${total.toFixed(2)}<br><br>`;
+    let texto = `💰 <b>Total geral:</b> R$ ${total.toFixed(2)}<br><br>`;
+    texto += `👩‍🏫 <b>Faturamento por professor:</b><br><br>`;
 
     for (let p in professores) {
-        texto += `👤 ${p}: R$ ${professores[p].toFixed(2)}<br>`;
+        texto += `• ${p}: R$ ${professores[p].toFixed(2)}<br>`;
     }
 
     document.getElementById("relatorio").innerHTML = texto;
@@ -230,3 +238,4 @@ function verAdmin() {
 
 </body>
 </html>
+
